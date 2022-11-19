@@ -3,7 +3,7 @@ import os
 import time
 import queue
 from threading import Thread
-from chb.log import Log
+from chb._log import Log
 
 
 logger = Log().getLogger()
