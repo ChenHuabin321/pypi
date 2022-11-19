@@ -11,7 +11,7 @@ setuptools.setup(
     description="chb常用代码库",  # 包的简述
     long_description=long_description,  # 包的详细介绍，一般在README.md文件内
     long_description_content_type="text/markdown",
-    url="https://github.com/pypa/sampleproject",  # 自己项目地址，比如github的项目地址
+    url="https://github.com/ChenHuabin321/pypi",  # 自己项目地址，比如github的项目地址
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",

@@ -3,7 +3,7 @@ import os
 import time
 import queue
 from threading import Thread
-from log import Log
+from chb.log import Log
 
 
 logger = Log().getLogger()
@@ -133,14 +133,21 @@ class Tableprint:
     |     0      |   test   |  0.3546  |       0.9216       |       True      |
     +------------+----------+----------+--------------------+-----------------+
     """
-    def __init__(self, headers, align='^', pad_len=6):
+    def __init__(self, headers, align='^', pad_len=6, print_index=True, index_name=''):
         """
         :param headers: 表头
         :param align: 对齐方式
         :param pad_len: 每一列的填充长度
+        :param print_index: 是否打印序号列
+        :param index_name: 序号列的列名
         """
+        self.align = align
         self.padding_lenth = []
+        self.col_num = len(headers)
+        if print_index:
+            self.index = 0
         headers = [str(h) for h in headers]
+        headers.insert(0, index_name)
         for i, h in enumerate(headers):
             count = 0  # 中文字符数量
             for word in h:
@@ -150,12 +157,10 @@ class Tableprint:
             size = len(h) + count
             padding_size = size + pad_len if size < 15 else int(size * 1.5)
             self.padding_lenth.append(padding_size if padding_size else padding_size + 1)
-        row_line_tmp = '+'.join([f'{"":-{align}{p}}' for p in self.padding_lenth])
+        row_line_tmp = '+'.join([f'{"":-{self.align}{p}}' for p in self.padding_lenth])
         self.row_line = f"+{row_line_tmp}+"  # 每一行的线
         self.header_line = self.row_line.replace('-', '=')  # 表头的线
-        # self.row_line = f"+{'+'.join([''.center(p, '-') for p in self.padding_lenth])}+"  # 每一行的线
-        # self.header_content = f"|{'|'.join([h.center(self.string_len(h, p), ' ') for h, p in zip(headers, self.padding_lenth)])}|"
-        header_content_tmp = '|'.join([f'{h:{align}{self.string_len(h, p)}}' for h, p in zip(headers, self.padding_lenth)])
+        header_content_tmp = '|'.join([f'{h:{self.align}{self.string_len(h, p)}}' for h, p in zip(headers, self.padding_lenth)])
         self.header_content = f"|{header_content_tmp}|"
 
     def string_len(self, string, width):
@@ -184,11 +189,15 @@ class Tableprint:
 
     def print_row(self, *row_lst):
         """打印输出一行"""
-        assert len(row_lst) == len(self.padding_lenth), '行字段数量必须与表头一致！'
+        assert len(row_lst) == self.col_num, '行字段数量必须与表头一致！'
+        row_lst = [str(i) for i in row_lst]
+        if hasattr(self, 'index'):
+            self.index += 1
+            row_lst.insert(0, self.index)
         strings = []
         for field, size in zip(row_lst, self.padding_lenth):
             strings.append(
-                str(field).center(self.string_len(field, size), ' ')
+                f'{str(field):{self.align}{self.string_len(field, size)}}'
             )
         line_content = '|'.join(strings)
         line_content = f"|{line_content}|"
