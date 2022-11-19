@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-import random
-import redis
-import cx_Oracle
-import pymongo
-import pymysql
+from ._imports import *
 
 
 class MysqlDao(object):
@@ -90,7 +86,7 @@ class OracleDao(object):
         self.conn.close()  # 关闭数据库连接
 
 
-class RedisHandler(object):
+class RedisDao(object):
     def __init__(self, redisDB=None, host=None, port=6379, password=None, db=0):
         """
         创建redis数据库连接

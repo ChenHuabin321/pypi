@@ -46,7 +46,7 @@ def get_time_str(format='%Y%m%d%H%M%S'):
     return time.strftime(format, time.localtime(time.time()))
 
 
-class MutilThreadReader:
+class MutilThreadReader(object):
     """
     本类是一个装饰器用于使用单线程IO操作函数改为多线程方式执行。
 
@@ -122,7 +122,7 @@ class MutilThreadReader:
         return real_run
 
 
-class Tableprint:
+class Tableprint(object):
     """
     本类作用与prettytable 类似，用于打印类似于下方的表格，区别在于，本类可以实现增量式打印，每次添加打印一行
     +------------+----------+----------+--------------------+-----------------+

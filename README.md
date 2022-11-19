@@ -4,3 +4,5 @@
 - dao.py：常用数据库连接
 - log.py：日志器
 - utils：常用小工具
+# 使用说明
+from chb import *
