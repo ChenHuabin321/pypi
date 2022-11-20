@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from ._imports import *
 
+from ._imports import *
 
 class MysqlDao(object):
     def __init__(self, HOST, PORT, USER_NAME, PASSWORD, DB_NAME,

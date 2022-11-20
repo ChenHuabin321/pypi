@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+
 # 注：此部分代码修改自pyforest
+
+imported = set()
+
 class LazyImport(object):
     def __init__(self, import_statement):
         self.__import_statement__ = import_statement
@@ -7,10 +12,6 @@ class LazyImport(object):
         self.__imported_name__ = import_statement.strip().split()[-1]
 
         self.__complementary_imports__ = []
-        self.__was_imported__ = False
-
-    def __on_import__(self, lazy_import):
-        self.__complementary_imports__.append(lazy_import)
 
     def __maybe_import_complementary_imports__(self):
         for lazy_import in self.__complementary_imports__:
@@ -25,18 +26,13 @@ class LazyImport(object):
     # Python will only import the module(s) if they are missing
     # if the module(s) were imported before, this method returns immediately
     def __maybe_import__(self):
+
         self.__maybe_import_complementary_imports__()
         exec(self.__import_statement__, globals())
         # Attention: if the import fails, the next lines will not be reached
         self.__was_imported__ = True
+        imported.add(self.__import_statement__)
         self.__maybe_add_docstring_and_signature__()
-
-        # Always update the import cell again
-        # this is not problem because the update is fast
-        # but it solves the problem of updating the first cell even if the first import was triggered via autocomplete
-        # when the import cell is only updated the first time, autocompletes wont result in updated cells
-        # Attention: the first cell is not updated after the autocomplete but after the cell (with the autocomplete) is executed
-        _update_import_cell()
 
     def __maybe_add_docstring_and_signature__(self):
         # adds docstrings for imported objects
@@ -78,31 +74,9 @@ class LazyImport(object):
             # next line only adds imported_name into the local scope but does not trigger a new import
             # because the lazy_import was already imported via another trigger
             self.__maybe_import__()
-            return f"active pyforest.LazyImport of {eval(self.__imported_name__)}"
+            return f"active chb.LazyImport of {eval(self.__imported_name__)}"
         else:
-            return f"lazy pyforest.LazyImport for '{self.__import_statement__}'"
-
-
-def _update_import_cell():
-    try:
-        from IPython.display import display, Javascript
-    except ImportError:
-        return
-
-    # import here and not at top of file in order to not interfere with importables
-    from ._imports import active_imports
-
-    statements = active_imports(print_statements=False)
-
-    display(
-        Javascript(
-            """
-        if (window._pyforest_update_imports_cell) {{ window._pyforest_update_imports_cell({!r}); }}
-    """.format(
-                "\n".join(statements)
-            )
-        )
-    )
+            return f"lazy chb.LazyImport for '{self.__import_statement__}'"
 
 
 def _get_import_statements(symbol_dict, was_imported=True):
@@ -252,6 +226,7 @@ os = LazyImport("import os")
 random = LazyImport("import random")
 time = LazyImport("import time")
 glob = LazyImport("import glob")
+logging = LazyImport("import logging")
 Path = LazyImport("from pathlib import Path")
 
 pickle = LazyImport("import pickle")
@@ -273,45 +248,18 @@ Process = LazyImport("from multiprocessing import Process")
 multiprocessing = LazyImport("import multiprocessing import Process")
 queue = LazyImport("import queue")
 
-
-##################################################
-### dont make adjustments below this line ########
-##################################################
-
-
-#############################
-### User-specific imports ###
-#############################
-# You can save your own imports in ~/.pyforest/user_imports.py
-# Please note: imports in ~/.pyforest/user_imports.py take precedence over the
-# imports above.
-
-# _load_user_specific_imports(globals())
-# # don't want to blow up the namespace
-# del _load_user_specific_imports
-
-
-# #######################################
-# ### Complementary, optional imports ###
-# #######################################
-# # Why is this needed? Some libraries patch existing libraries
-# # Please note: these imports are only executed if you already have the library installed
-# # If you want to deactivate specific complementary imports, do the following:
-# # - uncomment the lines which contain `.__on_import__` and the library you want to deactivate
-
-# pandas_profiling = LazyImport("import pandas_profiling")
-# pd.__on_import__(pandas_profiling)  # adds df.profile_report attribute to pd.DataFrame
-
-# bam = LazyImport("import bamboolib as bam")
-# pd.__on_import__(bam)  # adds GUI to pd.DataFrame when IPython frontend can display it
-
+MongoDao = LazyImport("from ._dao import MongoDao")
+OracleDao = LazyImport("from ._dao import OracleDao")
+MysqlDao = LazyImport("from ._dao import MysqlDao")
+RedisDao = LazyImport("from ._dao import RedisDao")
+Log = LazyImport("from ._log import Log")
+get_current_path = LazyImport("from ._utils import get_current_path")
+get_time_str = LazyImport("from ._utils import get_time_str")
+MutilThreadReader = LazyImport("from ._utils import MutilThreadReader")
+Tableprint = LazyImport("from ._utils import Tableprint")
 
 def lazy_imports():
     return _get_import_statements(globals(), was_imported=False)
 
-
-def active_imports(print_statements=True):
-    statements = _get_import_statements(globals(), was_imported=True)
-    if print_statements:
-        print("\n".join(statements))
-    return statements
+def active_imports():
+    return imported
