@@ -132,6 +132,7 @@ Flatten = LazyImport("from torch.nn import Flatten")
 Linear = LazyImport("from torch.nn import Linear")
 Sequential = LazyImport("from torch.nn import Sequential")
 DataLoader = LazyImport("from torch.utils.data import DataLoader")
+Dataset = LazyImport("from torch.utils.data import Dataset")
 transforms = LazyImport("from torchvision import transforms")
 trange = LazyImport("from tqdm import trange")
 
