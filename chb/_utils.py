@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
-# import os
-# import time
-# import queue
-# from threading import Thread
-# from chb._log import Log
-
 from ._imports import *
-logger = Log().getLogger()
+log = Log()()
 
 def get_current_path():
     """
@@ -70,7 +64,7 @@ class MutilThreadReader(object):
         """
         path_lst = args[0]
         thread_num = args[1]
-        self.thread_num = thread_num if thread_num else len(lst) // 3 + 1
+        self.thread_num = thread_num if thread_num else len(path_lst) // 3 + 1
         self.q1 = queue.Queue()  # 存放所有需要遍历的文件的队列
         self.q2 = queue.Queue()  # 存放每一次读取结果的队列
         for item in path_lst:
@@ -83,12 +77,12 @@ class MutilThreadReader(object):
         while True:
             try:
                 file = self.q1.get_nowait()
-                logger.info(f'开始读取: {file}')
+                log(f'开始读取: {file}')
                 df = func(file)
-                logger.info(f'完成读取: {file}')
+                log(f'完成读取: {file}')
                 self.q2.put(df)
             except queue.Empty:
-                logger.info('队列已空1……')
+                log('队列已空1……')
                 break
 
     def __call__(self, func):
@@ -107,7 +101,7 @@ class MutilThreadReader(object):
             for p in p_list:
                 p.join()
             end = time.time()
-            logger.info(f'共历时: {end - start}秒')
+            log(f'共历时: {end - start}秒')
             result = []
             while True:
                 try:
@@ -131,6 +125,12 @@ class Tableprint(object):
     +------------+----------+----------+--------------------+-----------------+
     |     0      |   test   |  0.3546  |       0.9216       |       True      |
     +------------+----------+----------+--------------------+-----------------+
+
+    :param headers: 表头
+    :param align: 对齐方式
+    :param pad_len: 每一列的填充长度
+    :param print_index: 是否打印序号列
+    :param index_name: 序号列的列名
     """
     def __init__(self, headers, align='^', pad_len=6, print_index=True, index_name=''):
         """

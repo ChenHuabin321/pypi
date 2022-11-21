@@ -2,9 +2,32 @@
 
 from ._imports import *
 
+log = Log()()
+
+
 class MysqlDao(object):
-    def __init__(self, HOST, PORT, USER_NAME, PASSWORD, DB_NAME,
-                 cursor_type=None, CHARSET='utf8'):
+    """
+    MySQL数据库的with上下文连接类。
+    :param HOST: 主机地址
+    :param PORT: 端口
+    :param USER_NAME:用户名
+    :param PASSWORD: 密码
+    :param DB_NAME: 数据库名
+    :param dictCursor: 是否字典型游标，True表示是，False表示创建一般游标。
+    :param CHARSET: 字符集，默认为utf-8
+    """
+    def __init__(self, HOST, USER_NAME, PASSWORD, DB_NAME,PORT=3306,
+                 dictCursor=False, CHARSET='utf8'):
+        """
+
+        :param HOST:
+        :param PORT:
+        :param USER_NAME:
+        :param PASSWORD:
+        :param DB_NAME:
+        :param cursor_type:
+        :param CHARSET:
+        """
         self.conn = pymysql.connect(  # 创建数据库连接
             host=HOST,  # 要连接的数据库所在主机ip
             user=USER_NAME,  # 数据库登录用户名
@@ -13,7 +36,7 @@ class MysqlDao(object):
             database=DB_NAME,
             charset=CHARSET  # 编码，注意不能写成utf-8
         )
-        if cursor_type:
+        if dictCursor:
             self.cursor = self.conn.cursor(pymysql.cursors.DictCursor)
         else:
             self.cursor = self.conn.cursor()
@@ -28,13 +51,21 @@ class MysqlDao(object):
 
 
 class MongoDao(object):
-    def __init__(self, HOST, PORT, USER_NAME=None, PASSWORD=None, DB_NAME=None, COL_NAME=None):
+    """
+    MongoDB 数据库的with上下文连接类。
+    HOST：服务器IP
+    PORT：端口，默认27017
+    USER_NAME和PASSWORD：用户名和密码，为空时不进行密码验证
+    DB_NAME：数据库名
+    COL_NAME：集合名
+    """
+    def __init__(self, HOST, PORT=27017, USER_NAME=None, PASSWORD=None, DB_NAME=None, COL_NAME=None):
         """
         HOST：服务器IP
         PORT：端口
         USER_NAME和PASSWORD：用户名和密码，为空时不进行密码验证
-        DB_NAME：数据库名
-        COL_NAME：集合名
+        DB_NAME：数据库名，为None时，表示不连接指定DB
+        COL_NAME：集合名，为None时，表示不连接指定集合
         """
 
         if USER_NAME and PASSWORD:
@@ -73,7 +104,20 @@ class MongoDao(object):
 
 
 class OracleDao(object):
+    """
+    Oracle数据库的with上下文连接类。
+    :param db_name: 数据库名
+    :param db_pwd: 密码
+    :param db_conn: 数据库连接字符串
+    :param encoding: 编码，默认为utf-8
+    """
     def __init__(self, db_name, db_pwd, db_conn, encoding="UTF-8"):
+        """
+        :param db_name: 数据库名
+        :param db_pwd: 密码
+        :param db_conn: 数据库连接字符串，例如："192.168.1.110:1521/testdb"
+        :param encoding: 编码，默认为utf-8
+        """
         self.conn = cx_Oracle.connect(db_name, db_pwd, db_conn, encoding)
         self.cur = self.conn.cursor()
 
@@ -87,9 +131,22 @@ class OracleDao(object):
 
 
 class RedisDao(object):
+    """
+    Redis数据库的with上下文管理连接。
+    :param redisDB: redis.StrictRedis对象，现有的redis连接。当传递该对象时，后续的host、post等参数无效。
+    :param host: redis主机地址
+    :param port: redis端口，默认为6379
+    :param password: 密码
+    :param db: 数据库序号，默认为0
+    """
     def __init__(self, redisDB=None, host=None, port=6379, password=None, db=0):
         """
         创建redis数据库连接
+        :param redisDB: redis.StrictRedis对象，现有的redis连接。当传递该对象时，后续的host、post等参数无效。
+        :param host: redis主机地址
+        :param port: redis端口
+        :param password: 密码
+        :param db: 数据库序号
         """
         if redisDB:
             self.__db = redisDB
@@ -98,6 +155,12 @@ class RedisDao(object):
                                         password=password,
                                         db=db)
             self.__db = redis_c
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_trace):
+        self.__exit__()
 
     def qsize(self, queue):
         return self.__db.llen(queue)  # 返回队列里面list内元素的数量

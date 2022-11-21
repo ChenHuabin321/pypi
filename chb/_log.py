@@ -1,14 +1,30 @@
 # -*- coding: utf-8 -*-
-import os
-import sys
-import logging
-# from colorlog import ColoredFormatter
+from ._imports import *
 
 class Log():
     """
-    日志类，记录运行状态
+    日志器类。
+    :param logger_name: 日志器名，或者说日志文件名
+    :param file_handler: 是否将日志保存到文件，为True时保存，默认为False。
+    :param log_dir:保存日志的目录路径。
+
+    from chb import *
+
+    log = Log().getLogger('info')
+    # log = Log()()  # 与上行等效
+
+    log(123)
+
+    输出效果如下：
+    2022-11-21 21:02:41 <module> line 1 out: 123
     """
     def __init__(self, logger_name=None, file_handler=False, log_dir='.'):
+        """
+
+        :param logger_name:
+        :param file_handler:
+        :param log_dir:
+        """
         self.logger_name = logger_name
         if logger_name:
             self.logger = logging.getLogger(logger_name)
@@ -23,26 +39,31 @@ class Log():
             datefmt='%Y-%m-%d  %H:%M:%S %a')
 
         try:  # 如果安装了colorlog就是用带颜色日志，没有安装，使用默认日志
-            exec('from colorlog import ColoredFormatter')
-            # 如果已经导入，就获取当前模块的ColoredFormatter
-            stream_logging_format = getattr(sys.modules[__name__], "ColoredFormatter")(
+            from colorlog import ColoredFormatter
+            stream_logging_format = ColoredFormatter(
                 fmt='%(log_color)s%(asctime)s %(log_color)s%(funcName)s line %(log_color)s%(lineno)s out: %(message_log_color)s%(message)s',
                 datefmt='%Y-%m-%d %H:%M:%S',
                 reset=True,
+                log_colors={
+                    'DEBUG': 'black',
+                    'INFO': 'black',
+                    'WARNING': 'black',
+                    'ERROR': 'black',
+                },
                 secondary_log_colors={
                     'message': {
-                        'INFO': 'yellow',
-                        'ERROR': 'yellow',
-                        'CRITICAL': 'yellow',
-                        'WARNING': 'yellow'
+                        'INFO': 'green',
+                        'ERROR': 'green',
+                        'CRITICAL': 'green',
+                        'WARNING': 'green'
                     }
                 },
                 style='%'
             )
         except:
-            stream_logging_format = logging.Formatter(fmt='%(asctime)s % %(funcName)s line  %(lineno)s out:  %(message)s',
-                  datefmt='%Y-%m-%d %H:%M:%S')
-
+            stream_logging_format = logging.Formatter(
+                fmt='%(asctime)s %(funcName)s line  %(lineno)s out:  %(message)s',
+                datefmt='%Y-%m-%d %H:%M:%S')
 
         # StreamHandler
         if len(self.logger.handlers) == 0:  # 如果没有添加过日志器，则添加（避免多次创建日志器造成日志重复输出多行）
