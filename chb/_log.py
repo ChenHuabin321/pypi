@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
+import sys
 import logging
-
+# from colorlog import ColoredFormatter
 
 class Log():
     """
@@ -20,8 +21,27 @@ class Log():
             fmt='%(asctime)s , %(name)s , %(process)d, %(levelname)s , %(filename)s %(funcName)s  line %(lineno)s ,'
                 ' %(message)s',
             datefmt='%Y-%m-%d  %H:%M:%S %a')
-        stream_logging_format = logging.Formatter(fmt='%(asctime)s %(funcName)s line %(lineno)s'' out: %(message)s',
-                                           datefmt='%Y-%m-%d %H:%M:%S')
+
+        try:  # 如果安装了colorlog就是用带颜色日志，没有安装，使用默认日志
+            exec('from colorlog import ColoredFormatter')
+            # 如果已经导入，就获取当前模块的ColoredFormatter
+            stream_logging_format = getattr(sys.modules[__name__], "ColoredFormatter")(
+                fmt='%(log_color)s%(asctime)s %(log_color)s%(funcName)s line %(log_color)s%(lineno)s out: %(message_log_color)s%(message)s',
+                datefmt='%Y-%m-%d %H:%M:%S',
+                reset=True,
+                secondary_log_colors={
+                    'message': {
+                        'INFO': 'yellow',
+                        'ERROR': 'yellow',
+                        'CRITICAL': 'yellow',
+                        'WARNING': 'yellow'
+                    }
+                },
+                style='%'
+            )
+        except:
+            stream_logging_format = logging.Formatter(fmt='%(asctime)s % %(funcName)s line  %(lineno)s out:  %(message)s',
+                  datefmt='%Y-%m-%d %H:%M:%S')
 
 
         # StreamHandler
