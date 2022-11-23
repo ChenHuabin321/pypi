@@ -40,7 +40,11 @@ Class MyDataset(Dataset):
 
 这类代码将会报错。但是因为导入了pytorch，所以可以通过以下方式替代：
 
-Class MyDataset(torch.utils.data.Dataset):
+Class MyDataset(torch.utils.data.dataset.Dataset):
+    pass
+
+或者，因为我们也通过惰性导入的方式导入了Dataset所属模块dataset，也可以这样继承：
+Class MyDataset(dataset.Dataset):
     pass
 
 2. with上下文数据库连接功能。MySQL、Oracle、MongoDB、RedisDao的上下文连接类名如下：

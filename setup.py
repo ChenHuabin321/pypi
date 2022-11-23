@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="chb",  # 用自己的名替换其中的YOUR_USERNAME_
-    version="1.7.6",  # 包版本号，便于维护版本
+    version="1.7.8",  # 包版本号，便于维护版本
     author="chenhuabin",  # 作者，可以写自己的姓名
     author_email="chenhuabin321@163.com",  # 作者联系方式，可写自己的邮箱地址
     description="chb常用代码库",  # 包的简述
