@@ -10,14 +10,38 @@
 1. 惰性导入
 使用该功能时，建议在代码文件首行运行下行代码：
 from chb import *
-这行代码会惰性导入Python中常用的近百个工具库，请参考文件最下方列表。这些工具库只是以惰性导入的方式存在，只在代码中进行使用（查看文档除外）时才会真实导入
+这行代码会惰性导入Python中常用的近百个工具库，可以通过以下方式查看所有可导入的工具库。
+
+from chb import *
+for i in all_import():
+    print(i)
+
+这些工具库只是以惰性导入的方式存在，只在代码中进行使用（查看文档除外）时才会真实导入
 所以，无需担心会导入上百个工具库导致占用内存和命名空间混乱。例如下方代码：
 
 from chb import *
 time.sleep(2)
 
-在执行`time.sleep(2)`前，time只是一个占位符，并不是真实的time内置模块，在执行这行代码后，原来的占"位变量"time会被覆盖，变为真实的time内置模块。
-注意，对time进行print、获取time的属性、调用time内的方法，都会执行真实导入。但time.__doc__在真实导入前并不会返回真实time模块的文档。
+在执行`time.sleep(2)`前，time只是一个占位符，并不是真实的time内置模块，在执行这行代码后，time模块将会被导入。
+注意，对time进行print、获取time的属性、调用time内的方法，都会执行真实导入。但time.__doc__在真实导入前并不会返回真实time模块的文档。可以通过以下方式查看已完成真实导入的工具库：
+
+from chb import *
+for i in imported():
+    print(i)
+
+千万注意：通过惰性导入的类不能直接继承。
+千万注意：通过惰性导入的类不能直接继承。
+千万注意：通过惰性导入的类不能直接继承。
+
+以pytorch中Dataset（torch.utils.data.Dataset）为例，如果直接继承Dataset：
+
+Class MyDataset(Dataset):
+    pass
+
+这类代码将会报错。但是因为导入了pytorch，所以可以通过以下方式替代：
+
+Class MyDataset(torch.utils.data.Dataset):
+    pass
 
 2. with上下文数据库连接功能。MySQL、Oracle、MongoDB、RedisDao的上下文连接类名如下：
 (1) MysqlDao

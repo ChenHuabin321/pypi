@@ -140,7 +140,7 @@ trange = LazyImport("from tqdm import trange")
 nltk = LazyImport("import nltk")
 gensim = LazyImport("import gensim")
 spacy = LazyImport("import spacy")
-re = LazyImport("import re")
+
 textblob = LazyImport("import textblob")
 
 # transformers
@@ -150,6 +150,7 @@ BertConfig = LazyImport("from transformers import BertConfig")
 
 ### Helper
 os = LazyImport("import os")
+re = LazyImport("import re")
 time = LazyImport("import time")
 sys = LazyImport("import sys")
 random = LazyImport("import random")
