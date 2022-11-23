@@ -26,26 +26,11 @@ time.sleep(2)
 注意，对time进行print、获取time的属性、调用time内的方法，都会执行真实导入。但time.__doc__在真实导入前并不会返回真实time模块的文档。可以通过以下方式查看已完成真实导入的工具库：
 
 from chb import *
-for i in imported():
+for i in imported():  # 查看已导入模块
     print(i)
 
-千万注意：通过惰性导入的类不能直接继承。
-千万注意：通过惰性导入的类不能直接继承。
-千万注意：通过惰性导入的类不能直接继承。
-
-以pytorch中Dataset（torch.utils.data.Dataset）为例，如果直接继承Dataset：
-
-Class MyDataset(Dataset):
-    pass
-
-这类代码将会报错。但是因为导入了pytorch，所以可以通过以下方式替代：
-
-Class MyDataset(torch.utils.data.dataset.Dataset):
-    pass
-
-或者，因为我们也通过惰性导入的方式导入了Dataset所属模块dataset，也可以这样继承：
-Class MyDataset(dataset.Dataset):
-    pass
+for i in all_import():  # 查看所有可惰性导入模块
+    print(i)
 
 2. with上下文数据库连接功能。MySQL、Oracle、MongoDB、RedisDao的上下文连接类名如下：
 (1) MysqlDao
