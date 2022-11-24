@@ -2,6 +2,16 @@
 from ._imports import *
 log = Log()()
 
+def set_device(cuda_index=0):
+    """
+    torch建模时，设置设备类型：CPU 或 GPU
+    cuda_index ：GPU 索引，默认为0
+    """
+    device = torch.device(f"cuda:{cuda_index}" if torch.cuda.is_available() else "cpu")
+    log(device)
+    return device
+
+
 def get_current_path():
     """
     获取当前文件所在目录完整路径
@@ -178,7 +188,7 @@ class Tableprint(object):
             width = width - count if width >= count else 0
             return width
         except:
-            logger.warn('函数参数输入错误！')
+            log.warn('函数参数输入错误！')
 
     def print_header(self):
         """打印输出表头"""
@@ -186,19 +196,70 @@ class Tableprint(object):
         print(self.header_content)
         print(self.header_line)
 
+    def print_middle_info(self, info):
+        """
+        在不影响表结构情况下，在打印每行结果前需要输出的信息
+        :param info: 需要输出的信息
+        :return:
+        """
+        print(f'\r{info}', end='')
+
     def print_row(self, *row_lst):
         """打印输出一行"""
         assert len(row_lst) == self.col_num, '行字段数量必须与表头一致！'
-        row_lst = [str(i) for i in row_lst]
+        row_lst2 = []
+        for i in row_lst:
+            if isinstance(i, torch.Tensor) or isinstance(i, float):
+                row_lst2.append(f"{i:.4f}")
+            else:
+                row_lst2.append(str(i))
         if hasattr(self, 'index'):
             self.index += 1
-            row_lst.insert(0, self.index)
+            row_lst2.insert(0, self.index)
         strings = []
-        for field, size in zip(row_lst, self.padding_lenth):
+        for field, size in zip(row_lst2, self.padding_lenth):
             strings.append(
                 f'{str(field):{self.align}{self.string_len(field, size)}}'
             )
         line_content = '|'.join(strings)
-        line_content = f"|{line_content}|"
+        line_content = f"\r|{line_content}|"
         print(line_content)
         print(self.row_line)
+
+def time_cost(start_time, end_time):
+    """
+    自适应输出时间消耗
+    start_time：开始时间
+    end_time：结束时间
+    示例：time_cost(0, 3668)  # 返回： 1h 1m 8s
+    """
+    cost = end_time - start_time
+    h = f"{cost // 3600:d} h " if cost // 3600 else ""
+    m = f"{cost % 3600 // 60:d} m " if cost % 3600 // 60 else ""
+    s = f"{cost % 3600 % 60:.2f} s" if cost % 3600 % 60 else ""
+    return f"{h}{m}{s}"
+
+def bar(obj, return_index=False, bar_len_total=50, bar_str='█', end='', step=1):
+    """
+    obj: 可迭代对象或整型数据，整型将转换为range(obj)
+    return_index: 返回迭代元素的同时，是否返回索引
+    bar_len_total: 进度条长度，默认为50
+    bar_str: 进度条中的字符串，默认为'█'
+    end_str: 完成全部进度后，需要打印的字符串
+    step: 每个多少轮更新进度条
+    """
+    from collections.abc import Iterable
+    if isinstance(obj, int):
+        obj = range(obj)
+    assert isinstance(obj, Iterable), 'obj必须是整型或者可迭代对象'
+    obj_len = len(obj)
+    start_time = time.time()
+    for now, item in enumerate(obj, start=1):
+        yield now - 1, item if return_index else item
+        if now % step == 0:
+            bar_len_now = bar_len_total * now // obj_len  # 当前轮次需要打印的bar_str个数
+            end_time = time.time()
+            print(
+                f"\r{now / obj_len:<.0%}|{bar_str * bar_len_now:<{bar_len_total}}| {now}/{obj_len} [Time cost: {time_cost(start_time, end_time)}]",
+                end='')
+    print(end=end)

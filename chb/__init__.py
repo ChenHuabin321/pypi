@@ -32,6 +32,24 @@ for i in imported():  # 查看已导入模块
 for i in all_import():  # 查看所有可惰性导入模块
     print(i)
 
+千万注意：通过惰性导入的类不能直接继承。
+千万注意：通过惰性导入的类不能直接继承。
+千万注意：通过惰性导入的类不能直接继承。
+
+以pytorch中Dataset（torch.utils.data.Dataset）为例，如果直接继承Dataset：
+
+Class MyDataset(Dataset):
+    pass
+
+这类代码将会报错。但是因为导入了pytorch，所以可以通过以下方式替代：
+
+Class MyDataset(torch.utils.data.dataset.Dataset):
+    pass
+
+或者，因为我们也通过惰性导入的方式导入了Dataset所属模块dataset，也可以这样继承：
+Class MyDataset(dataset.Dataset):
+    pass
+
 2. with上下文数据库连接功能。MySQL、Oracle、MongoDB、RedisDao的上下文连接类名如下：
 (1) MysqlDao
 (2) OracleDao
@@ -98,5 +116,19 @@ print(path)
 @MutilThreadReader(['./data/excel文件1.xlsx', './data/excel文件2.xlsx', './data/excel文件3.xlsx'], 3)
 def read_excel(path):
     pass
+
+(5) 打印进度条
+from chb import *
+lst = [i for i in range(20)]
+for i in bar(lst, end='\n'):
+    time.sleep(0.2)
+
+输出结果：
+100%|██████████████████████████████████████████████████| 20/20 [Time cost: 4.01 s]
+
+(6) 自适应输出时间消耗
+from chb import *
+time_cost(0, 3668)  # 返回： 1h 1m 8s
+
 """
 from ._imports import *  # 惰性导入N多模块
