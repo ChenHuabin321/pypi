@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
+import random
+import pymongo
+import pymysql
+import cx_Oracle
+import redis
 
-from ._imports import *
+from chb._log import Log
 
 log = Log()()
 
@@ -118,7 +123,7 @@ class OracleDao(object):
         :param db_conn: 数据库连接字符串，例如："192.168.1.110:1521/testdb"
         :param encoding: 编码，默认为utf-8
         """
-        self.conn = cx_Oracle.connect(db_name, db_pwd, db_conn, encoding)
+        self.conn = cx_Oracle.connect(db_name, db_pwd, db_conn, encoding=encoding)
         self.cur = self.conn.cursor()
 
     def __enter__(self):
@@ -160,7 +165,7 @@ class RedisDao(object):
         return self
 
     def __exit__(self, exc_type, exc_value, exc_trace):
-        self.__exit__()
+        self.__db.close()
 
     def qsize(self, queue):
         return self.__db.llen(queue)  # 返回队列里面list内元素的数量

@@ -9,23 +9,23 @@
 详细说明如下：
 1. 惰性导入
 使用该功能时，建议在代码文件首行运行下行代码：
-from chb import *
+from chb._imports import *
 这行代码会惰性导入Python中常用的近百个工具库，可以通过以下方式查看所有可导入的工具库。
 
-from chb import *
+from chb._imports import *
 for i in all_import():
     print(i)
 
 这些工具库只是以惰性导入的方式存在，只在代码中进行使用（查看文档除外）时才会真实导入
 所以，无需担心会导入上百个工具库导致占用内存和命名空间混乱。例如下方代码：
 
-from chb import *
+from chb._imports import *
 time.sleep(2)
 
 在执行`time.sleep(2)`前，time只是一个占位符，并不是真实的time内置模块，在执行这行代码后，time模块将会被导入。
 注意，对time进行print、获取time的属性、调用time内的方法，都会执行真实导入。但time.__doc__在真实导入前并不会返回真实time模块的文档。可以通过以下方式查看已完成真实导入的工具库：
 
-from chb import *
+from chb._imports import *
 for i in imported():  # 查看已导入模块
     print(i)
 
@@ -131,4 +131,16 @@ from chb import *
 time_cost(0, 3668)  # 返回： 1h 1m 8s
 
 """
-from ._imports import *  # 惰性导入N多模块
+from chb._dao import MongoDao
+from chb._dao import OracleDao
+from chb._dao import MysqlDao
+from chb._dao import RedisDao
+from chb._log import Log
+from chb._utils import set_device
+from chb._utils import get_current_path
+from chb._utils import get_time_str
+from chb._utils import MutilThreadReader
+from chb._utils import Tableprint
+from chb._utils import bar
+from chb._utils import time_cost
+from chb._utils import Timer

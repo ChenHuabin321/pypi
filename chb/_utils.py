@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 from ._imports import *
-log = Log()()
+import queue
+import torch
+from threading import Thread
+from chb._log import Log
+log = Log(message_only=True)()
 
 def set_device(cuda_index=0):
     """
@@ -8,7 +12,7 @@ def set_device(cuda_index=0):
     cuda_index ：GPU 索引，默认为0
     """
     device = torch.device(f"cuda:{cuda_index}" if torch.cuda.is_available() else "cpu")
-    log(device)
+    log(f'Succeed to set device: {device}')
     return device
 
 
@@ -142,7 +146,7 @@ class Tableprint(object):
     :param print_index: 是否打印序号列
     :param index_name: 序号列的列名
     """
-    def __init__(self, headers, align='^', pad_len=6, print_index=True, index_name=''):
+    def __init__(self, headers, align='^', pad_len=6, print_index=False, index_name='index'):
         """
         :param headers: 表头
         :param align: 对齐方式
@@ -153,10 +157,11 @@ class Tableprint(object):
         self.align = align
         self.padding_lenth = []
         self.col_num = len(headers)
+        headers = [str(h) for h in headers]
         if print_index:
             self.index = 0
-        headers = [str(h) for h in headers]
-        headers.insert(0, index_name)
+
+            headers.insert(0, index_name)
         for i, h in enumerate(headers):
             count = 0  # 中文字符数量
             for word in h:
@@ -234,9 +239,9 @@ def time_cost(start_time, end_time):
     示例：time_cost(0, 3668)  # 返回： 1h 1m 8s
     """
     cost = end_time - start_time
-    h = f"{cost // 3600:d} h " if cost // 3600 else ""
-    m = f"{cost % 3600 // 60:d} m " if cost % 3600 // 60 else ""
-    s = f"{cost % 3600 % 60:.2f} s" if cost % 3600 % 60 else ""
+    h = f"{int(cost // 3600):d} h " if cost // 3600 else ""
+    m = f"{int(cost % 3600 // 60):d} m " if cost % 3600 // 60 else ""
+    s = f"{round(cost % 3600 % 60, 5)} s" if cost % 3600 % 60 else ""
     return f"{h}{m}{s}"
 
 def bar(obj, return_index=False, bar_len_total=50, bar_str='█', end='', step=1):
@@ -252,14 +257,60 @@ def bar(obj, return_index=False, bar_len_total=50, bar_str='█', end='', step=1
     if isinstance(obj, int):
         obj = range(obj)
     assert isinstance(obj, Iterable), 'obj必须是整型或者可迭代对象'
+    assert len(obj) > 0, '可迭代对象长度为0'
     obj_len = len(obj)
     start_time = time.time()
+    now = obj[-1]
     for now, item in enumerate(obj, start=1):
-        yield now - 1, item if return_index else item
+        if return_index:
+            yield now - 1, item
+        else:
+            yield item
         if now % step == 0:
             bar_len_now = bar_len_total * now // obj_len  # 当前轮次需要打印的bar_str个数
             end_time = time.time()
             print(
                 f"\r{now / obj_len:<.0%}|{bar_str * bar_len_now:<{bar_len_total}}| {now}/{obj_len} [Time cost: {time_cost(start_time, end_time)}]",
                 end='')
+    print(
+        f"\r{now / obj_len:<.0%}|{bar_str * bar_len_now:<{bar_len_total}}| {now}/{obj_len} [Time cost: {time_cost(start_time, end_time)}]",
+        end='')
     print(end=end)
+
+
+def bar2(now, total, bar_len_total=50, bar_str='█', info=None):
+    """
+    now: 当前进度
+    total: 需要迭代的总次数
+    bar_len_total: 进度条长度，默认为50
+    bar_str: 进度条中的字符串，默认为'█'
+    info: 需要在进度条末尾打印的字符串
+    """
+
+    bar_len_now = bar_len_total * now // total  # 当前轮次需要打印的bar_str个数
+    if info is None:
+        print(
+            f"\r{now / total:<.0%}|{bar_str * bar_len_now:<{bar_len_total}}| {now}/{total}",
+            end='')
+    else:
+        print(
+            f"\r{now / total:<.0%}|{bar_str * bar_len_now:<{bar_len_total}}| {now}/{total}  {info}",
+            end='')
+
+
+class Timer:
+    """
+    计时器，统计一段代码的运行时长
+    使用方法：
+    with Timer():
+        pass
+    """
+    def __init__(self):
+        self.start_time = None
+
+    def __enter__(self):
+        self.start_time = time.time()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        info = time_cost(self.start_time, time.time())
+        log(f'Time Cost: {info}')
