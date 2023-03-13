@@ -1,10 +1,22 @@
 # -*- coding: utf-8 -*-
-from ._imports import *
-import queue
-import torch
+from __future__ import print_function
+
+from collections.abc import Iterable
+import pytz
 from threading import Thread
-from chb._log import Log
-log = Log(message_only=True)()
+from chb._log import log
+from datetime import datetime
+
+import sys
+from itertools import chain
+from collections import deque
+try:
+    from reprlib import repr
+except ImportError:
+    pass
+from chb._imports import *
+# log = Log(message_only=True)()
+
 
 def set_device(cuda_index=0):
     """
@@ -231,18 +243,53 @@ class Tableprint(object):
         print(line_content)
         print(self.row_line)
 
-def time_cost(start_time, end_time):
+
+def getsizeof(data):
     """
-    自适应输出时间消耗
-    start_time：开始时间
-    end_time：结束时间
-    示例：time_cost(0, 3668)  # 返回： 1h 1m 8s
+    自适应输出变量占用内存大小
+    data：变量
+    示例：getsizeof(data)  # 返回： 1 G 10 M 104 KB'
     """
-    cost = end_time - start_time
-    h = f"{int(cost // 3600):d} h " if cost // 3600 else ""
-    m = f"{int(cost % 3600 // 60):d} m " if cost % 3600 // 60 else ""
-    s = f"{round(cost % 3600 % 60, 5)} s" if cost % 3600 % 60 else ""
-    return f"{h}{m}{s}"
+    size = sys.getsizeof(data)
+    g = f"{int(size // (1024**3)):d} G " if size // (1024**3) else ""
+    m = f"{int(size % (1024**3) // (1024**2)):d} M " if size % (1024**3) // (1024**2) else ""
+    kb = f"{round(size % (1024**3) % 1024, 5)} KB" if size % (1024**3) % 1024 else ""
+    return f"{g}{m}{kb}"
+
+
+def getdeepsizeof(o, handlers={}, verbose=False):
+    """
+    获取Python对象大致占用内存空间大小，注意本方法可以获取集合元素深层嵌套的占用空间总和，但集合元素越多，效率越低
+    """
+    dict_handler = lambda d: chain.from_iterable(d.items())
+    all_handlers = {tuple: iter,
+                    list: iter,
+                    deque: iter,
+                    dict: dict_handler,
+                    set: iter,
+                    frozenset: iter,
+                    }
+    all_handlers.update(handlers)  # user handlers take precedence
+    seen = set()  # track which object id's have already been seen
+    default_size = getsizeof(0)  # estimate sizeof object without __sizeof__
+
+    def sizeof(o):
+        if id(o) in seen:  # do not double count the same object
+            return 0
+        seen.add(id(o))
+        s = sys.getsizeof(o, default_size)
+        for typ, handler in all_handlers.items():
+            if isinstance(o, typ):
+                s += sum(map(sizeof, handler(o)))
+                break
+        return s
+
+    size = sizeof(o)
+    g = f"{int(size // (1024 ** 3)):d} G " if size // (1024 ** 3) else ""
+    m = f"{int(size % (1024 ** 3) // (1024 ** 2)):d} M " if size % (1024 ** 3) // (1024 ** 2) else ""
+    kb = f"{round(size % (1024 ** 3) % 1024, 5)} KB" if size % (1024 ** 3) % 1024 else ""
+    return f"{g}{m}{kb}"
+
 
 def bar(obj, return_index=False, bar_len_total=50, bar_str='█', end='', step=1):
     """
@@ -253,7 +300,6 @@ def bar(obj, return_index=False, bar_len_total=50, bar_str='█', end='', step=1
     end_str: 完成全部进度后，需要打印的字符串
     step: 每个多少轮更新进度条
     """
-    from collections.abc import Iterable
     if isinstance(obj, int):
         obj = range(obj)
     assert isinstance(obj, Iterable), 'obj必须是整型或者可迭代对象'
@@ -278,8 +324,9 @@ def bar(obj, return_index=False, bar_len_total=50, bar_str='█', end='', step=1
     print(end=end)
 
 
-def bar2(now, total, bar_len_total=50, bar_str='█', info=None):
+def bar2(now, total, need_print=True, bar_len_total=30, bar_str='█', info=None):
     """
+    打印输出进度条
     now: 当前进度
     total: 需要迭代的总次数
     bar_len_total: 进度条长度，默认为50
@@ -289,28 +336,290 @@ def bar2(now, total, bar_len_total=50, bar_str='█', info=None):
 
     bar_len_now = bar_len_total * now // total  # 当前轮次需要打印的bar_str个数
     if info is None:
-        print(
-            f"\r{now / total:<.0%}|{bar_str * bar_len_now:<{bar_len_total}}| {now}/{total}",
-            end='')
+        string = f"{now / total:>8.2%}|{bar_str * bar_len_now:　<{bar_len_total}}| {now}/{total}"
     else:
-        print(
-            f"\r{now / total:<.0%}|{bar_str * bar_len_now:<{bar_len_total}}| {now}/{total}  {info}",
-            end='')
+        string = f"{now / total:>8.2%}|{bar_str * bar_len_now:　<{bar_len_total}}| {now}/{total}  {info}"
+    if need_print:
+        print(f"\r{string}",end='')
+    else:
+        return string
 
 
 class Timer:
     """
-    计时器，统计一段代码的运行时长
-    使用方法：
-    with Timer():
-        pass
+        计时器，统计一段代码的运行时长
+        使用方法：
+        with Timer():
+            pass
+        %y 两位数的年份表示（00-99）
+        %Y 四位数的年份表示（000-9999）
+        %m 月份（01-12）
+        %d 月内中的一天（0-31）
+        %H 24小时制小时数（0-23）
+        %I 12小时制小时数（01-12）
+        %M 分钟数（00=59）
+        %S 秒（00-59）
+        %a 本地简化星期名称
+        %A 本地完整星期名称
+        %b 本地简化的月份名称
+        %B 本地完整的月份名称
+        %c 本地相应的日期表示和时间表示
+        %j 年内的一天（001-366）
+        %p 本地A.M.或P.M.的等价符
+        %U 一年中的星期数（00-53）星期天为星期的开始
+        %w 星期（0-6），星期天为星期的开始
+        %W 一年中的星期数（00-53）星期一为星期的开始
+        %x 本地相应的日期表示
+        %X 本地相应的时间表示
+        %Z 当前时区的名称
+        %% %号本身
     """
-    def __init__(self):
+
+    def __init__(self, name=None):
         self.start_time = None
+        self.name = name
 
     def __enter__(self):
         self.start_time = time.time()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        info = time_cost(self.start_time, time.time())
-        log(f'Time Cost: {info}')
+        info = self.time_cost(self.start_time, time.time())
+        if self.name is not None:
+            log(f'Time Cost-{self.name}: {info}')
+        else:
+            log(f'Time Cost: {info}')
+
+    @staticmethod
+    def time_cost(start_time, end_time):
+        """
+        自适应输出时间消耗
+        start_time：开始时间，时间戳，整型
+        end_time：结束时间，时间戳，整型
+        示例：time_cost(0, 3668)  # 返回： 1h 1m 8s
+        """
+        cost = end_time - start_time
+        h = f"{int(cost // 3600):d} h " if cost // 3600 else ""
+        m = f"{int(cost % 3600 // 60):d} m " if cost % 3600 // 60 else ""
+        s = f"{round(cost % 3600 % 60, 5)} s" if cost % 3600 % 60 else ""
+        return f"{h}{m}{s}"
+
+    @staticmethod
+    def stamp2str(timestamp, format_str='%Y-%m-%d %H:%M:%S', timezone='UTC'):
+        """
+        将整型时间戳转换为指定格式的时间字符串
+        :param timestamp: 整型，时间戳
+        :param format_str: 字符型， 输出时间字符串的格式，默认 %Y-%m-%d %H:%M:%S
+        :param timezone: 字符型， 时区，默认为 UTC 也可以设置为  CST
+        :return:  指定格式的时间字符串
+        """
+        if timezone == 'UTC':
+            st = time.gmtime(timestamp)  # UTC时区
+        else:
+            st = time.localtime(timestamp)  # CST时区
+        return time.strftime(format_str, st)
+
+    @staticmethod
+    def str2stamp(string, format_str='%Y-%m-%d %H:%M:%S', timezone='UTC'):
+        """
+        将指定格式的时间字符串转化为整型时间戳
+        :param string:  时间字符串
+        :param format_str: 字符型， string参数的时间格式
+        :param timezone: 字符型， 时区，默认为 UTC 也可以设置为  CST
+        :return:  整型时间戳
+        """
+        # 转换为struct_time对象
+        st = time.strptime(string, format_str)
+        if timezone == 'UTC':
+            return int(time.mktime(st) - time.timezone)  # UTC时区
+        else:
+            return int(time.mktime(st))  # CST时区
+
+    @staticmethod
+    def get_time_str(format='%Y%m%d%H%M%S'):
+        """
+        按指定格式获取当前时间字符串
+        :param format: 输出时间字符串的格式，默认为  %Y%m%d%H%M%S
+        :return: 时间字符串
+        """
+        return time.strftime(format, time.localtime(time.time()))
+
+    @staticmethod
+    def dateAdd(start_date_str, start_format_str='%Y-%m-%d %H:%M:%S', days=0, seconds=0,
+                minutes=0, hours=0, weeks=0, end_format_str='%Y-%m-%d %H:%M:%S'):
+        """
+        返回指定格式时间字符串 偏移一段时间（n天前或n小时后） 之后的时间字符串
+        :param start_date_str: 指定时间字符串
+        :param format_str: 指定的时间字符串格式，默认为 %Y-%m-%d %H:%M:%S
+        :param days: 偏移多少天
+        :param seconds: 偏移多少秒
+        :param minutes: 偏移多少分钟
+        :param hours: 偏移多少小时
+        :param weeks: 偏移多少星期
+        :param end_format_str: 输出时间字符串的格式，默认为 %Y-%m-%d %H:%M:%S
+        :return: 时间字符串，格式通过format_
+        """
+        start_date = datetime.datetime.strptime(start_date_str, start_format_str)
+        days = datetime.timedelta(days=days, seconds=seconds, minutes=minutes, hours=hours, weeks=weeks)
+        end_date = start_date + days
+        return end_date.strftime(end_format_str)
+
+    @staticmethod
+    def str2datetime(string, format_str='%Y-%m-%d %H:%M:%S'):
+        """
+        将指定格式的时间字符串转化为 datetime类型
+        :param string:  时间字符串
+        :param format_str: 字符型， string参数的时间格式
+        :return:  datatime类 实例对象
+        """
+        return datetime.datetime.strptime(string, format_str)
+
+    @staticmethod
+    def datetime2str(dt, format_str='%Y-%m-%d %H:%M:%S'):
+        """
+        将datetime类型数据转化为 指定格式的时间字符串
+        :param date_:  datatime类 实例对象
+        :param format_str: 字符型， string参数的时间格式
+        :return:  整型时间戳
+        """
+        return dt.strftime(format_str)
+
+    @staticmethod
+    def stamp2datetime(stamp, timezone='UTC'):
+        """
+        将整型时间戳转为指定时区的datetime类型
+        :param stamp: 整型时间戳
+        :param timezone: 指定时区，UTC或CST
+        :return:
+        """
+        # 判断时区参数是否是UTC或CST
+        if timezone == 'UTC':
+            # 创建一个UTC时区对象
+            timezone = pytz.utc
+        elif timezone == 'CST':
+            # 创建一个北京时间（CST）时区对象
+            timezone = pytz.timezone('Asia/Shanghai')
+        else:
+            # 抛出异常，提示无效的时区参数
+            raise ValueError('Invalid timezone parameter. Must be UTC or CST.')
+        # 将时间戳转换为带有时区的datetime对象
+        dt = datetime.datetime.fromtimestamp(stamp, tz=timezone)
+        # 返回datetime对象
+        return dt
+
+    @staticmethod
+    def datetime2tamp(dt, timezone='UTC', replace=True):
+        """
+        将datetime类型转为指定时区的整型时间戳
+        :param dt:  datetime类型
+        :param timezone: 时区， UTC或CST
+        :param replace:  转换还是替换时区，replace=True时，直接替换时区，即时间数只不变，转换时，表示转为另一时区同一时刻的时间（相差8小时）
+        :return:
+        """
+        # 判断时区参数是否是UTC或CST
+        if timezone == 'UTC':
+            # 创建一个UTC时区对象
+            timezone = pytz.utc
+        elif timezone == 'CST':
+            # 创建一个北京时间（CST）时区对象
+            timezone = pytz.timezone('Asia/Shanghai')
+        else:
+            # 抛出异常，提示无效的时区参数
+            raise ValueError('Invalid timezone parameter. Must be UTC or CST.')
+        # 将datetime对象转换为带有时区的datetime对象
+        if replace:
+            dt = dt.replace(tzinfo=timezone)
+        else:
+            dt = dt.astimezone(timezone)
+        # 将datetime对象转换为时间戳（秒）
+        ts = datetime.datetime.timestamp(dt)
+        # 四舍五入并转换为整数
+        ts = int(round(ts))
+        # 返回时间戳
+        return ts
+
+    @staticmethod
+    def datebetween(string1, string2, format_str1='%Y-%m-%d %H:%M:%S', format_str2='%Y-%m-%d %H:%M:%S'):
+        """
+        求两个
+        :param date_:  datatime类 实例对象
+        :param format_str1: 字符型， string1参数的时间格式
+        :param format_str2: 字符型， string2参数的时间格式
+        :return:  整型时间戳
+        """
+        return datetime.datetime.strptime(string1, format_str1) - datetime.datetime.strptime(string2, format_str2)
+
+class GetFirstLetter(object):
+    def is_contain_chinese(self, check_str):
+        """
+        判断字符串中是否包含中文
+        :param check_str: {str} 需要检测的字符串
+        :return: {bool} 包含返回True， 不包含返回False
+        """
+        for ch in check_str:
+            if u'\u4e00' <= ch <= u'\u9fff':
+                return True
+        return False
+
+    def single_get_first(self, string):
+        """
+        获取全拼的首字母
+        """
+        p = xpinyin.Pinyin()
+        py = p.get_pinyin(string)
+        return py[0]
+
+    def getPinyin(self, string):
+        """
+        输出所有字的首字母
+        """
+        if string == None:
+            return None
+        string = string.replace('（', '(')
+        s_list = string.split('(')
+        s2_list = []
+        for s in s_list:
+            s = re.sub("[A-Za-z0-9\!\%\[\]\,\。（）()*-+=/]", "", s)
+            lst = list(s)
+            charLst = []
+            for l in lst:
+                charLst.append(self.single_get_first(l))
+            s2_list.append(''.join(charLst))
+        return '_'.join(s2_list)
+
+class Cpen:
+    """
+    无论文件是否存在都写入文件，功能待完善
+    """
+    def __init__(self, path, mode, encoding='utf-8'):
+        self.path = path
+        self.mode = mode
+        if not os.path.exists(path):
+            with open(file=path, mode='w', encoding=encoding):
+                pass
+            self.f = open(file=path, mode=mode, encoding=encoding)
+        else:
+            self.f = open(file=path, mode=mode, encoding=encoding)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.f.close()
+
+    def readline(self):
+        while True:
+            line = self.f.readline()
+            if not line:
+                break
+            yield line
+
+    def readlines(self, num_lines=100000):
+        while True:
+            lines = self.f.readlines(num_lines)
+            if not lines:
+                break
+            yield lines
+
+
+if __name__=='__main__':
+    print(Timer.datebetween('2022-01-01 00:00:00', '2022-01-04 00:00:00'))

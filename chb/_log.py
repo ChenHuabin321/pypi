@@ -21,7 +21,7 @@ class Log:
     输出效果如下：
     2022-11-21 21:02:41 <module> line 1 out: 123
     """
-    def __init__(self, logger_name=None, file_handler=False, log_dir='.', message_only=False):
+    def __init__(self, logger_name='chb', file_handler=False, log_dir='.', message_only=False):
         """
 
         :param logger_name:
@@ -29,11 +29,10 @@ class Log:
         :param log_dir:
         """
         self.logger_name = logger_name
-        if logger_name:
-            self.logger = logging.getLogger(logger_name)
-        else:
-            temp_logger_name = str(int(time.time()*1000))  # 使用时间戳作为日志器名称，避免一个日志器中重复添加handler，造成输出日志冗余
-            self.logger = logging.getLogger(temp_logger_name)
+        self.logger_name_exist_befor = False  # 此前是否存在同名日志器
+        if self.logger_name in logging.Logger.manager.loggerDict:  # 如果此前存在同名日志器
+            self.logger_name_exist_befor = True
+        self.logger = logging.getLogger(logger_name)
         self.logger.setLevel(level=logging.DEBUG)
 
         # Formatter
@@ -45,7 +44,7 @@ class Log:
 
         try:  # 如果安装了colorlog就是用带颜色日志，没有安装，使用默认日志
             from colorlog import ColoredFormatter
-            fmt = '%(message_log_color)s%(message)s' if message_only else '%(log_color)s%(asctime)s %(log_color)s%(funcName)s line %(log_color)s%(lineno)s out: %(message_log_color)s%(message)s'
+            fmt = '%(message_log_color)s%(message)s' if message_only else '%(log_color)s%(asctime)s %(log_color)s%(process)s %(log_color)s%(funcName)s %(log_color)s%(lineno)s: %(message_log_color)s%(message)s'
             stream_logging_format = ColoredFormatter(
                 fmt=fmt,
                 datefmt='%Y-%m-%d %H:%M:%S',
@@ -67,26 +66,30 @@ class Log:
                 style='%'
             )
         except:
-            fmt = '%(message)s' if message_only else '%(asctime)s %(funcName)s line  %(lineno)s out:  %(message)s'
+            fmt = '%(message)s' if message_only else '%(asctime)s %(process)s %(funcName)s %(lineno)s: %(message)s'
             stream_logging_format = logging.Formatter(
                 fmt=fmt,
                 datefmt='%Y-%m-%d %H:%M:%S')
 
         # StreamHandler
-        stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(stream_logging_format)
-        self.logger.addHandler(stream_handler)
+        if not self.logger_name_exist_befor:  # 如果此前不存在同名日志器
+            stream_handler = logging.StreamHandler()
+            stream_handler.setFormatter(stream_logging_format)
+            self.logger.addHandler(stream_handler)
 
 
         # FileHandler
         if file_handler:
-            if self.logger_name:
-                log_file = os.path.join(log_dir, f'{self.logger_name}.log')
+            log_file = os.path.join(os.path.abspath(log_dir), f'{self.logger_name}.log')  # 获取log_dir的绝对路径，才能后续对比baseFilename
+            for handler in self.logger.handlers:
+                if isinstance(handler, logging.FileHandler):
+                    if handler.baseFilename == log_file:
+                        break
             else:
-                log_file = os.path.join(log_dir, 'chb.log')
-            file_handler = logging.FileHandler(log_file, encoding='UTF-8')
-            file_handler.setFormatter(file_logging_format)
-            self.logger.addHandler(file_handler)
+                log_file = os.path.join(log_dir, f'{self.logger_name}.log')
+                file_handler = logging.FileHandler(log_file, encoding='UTF-8')
+                file_handler.setFormatter(file_logging_format)
+                self.logger.addHandler(file_handler)
 
     def __call__(self, level='info'):
         """
@@ -107,3 +110,11 @@ class Log:
         """
         return self.__call__(level)
 
+
+# 提供一个默认的日志器
+log = Log(logger_name='default_message_only_log', message_only=True)()
+
+
+if __name__ == '__main__':
+    log = Log(logger_name='123', message_only=False)()
+    log(123)

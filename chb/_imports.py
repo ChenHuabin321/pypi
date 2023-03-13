@@ -18,7 +18,7 @@ np = LazyImport("import numpy as np")
 # # Deep Learning
 # tf = LazyImport("import tensorflow as tf")
 # keras = LazyImport("import keras")
-# torch = LazyImport("import torch")
+torch = LazyImport("import torch")
 # fastai = LazyImport("import fastai")
 # nn = LazyImport("import torch.nn as nn")
 # F = LazyImport("import torch.nn.functional as F")
@@ -55,32 +55,33 @@ np = LazyImport("import numpy as np")
 
 ### Helper
 os = LazyImport("import os")
+sys = LazyImport("import sys")
 re = LazyImport("import re")
 time = LazyImport("import time")
-sys = LazyImport("import sys")
 random = LazyImport("import random")
 glob = LazyImport("import glob")
 logging = LazyImport("import logging")
 Path = LazyImport("from pathlib import Path")
 pickle = LazyImport("import pickle")
 json = LazyImport("import json")
+queue = LazyImport("import queue")
 
 dt = LazyImport("import datetime as dt")
 datetime = LazyImport("import datetime")
+xpinyin = LazyImport("import xpinyin")
 #
 #
 # ## database
-# redis = LazyImport("import redis")
-# cx_Oracle = LazyImport("import cx_Oracle")
-# pymongo = LazyImport("import pymongo")
-# pymysql = LazyImport("import pymysql")
+redis = LazyImport("import redis")
+cx_Oracle = LazyImport("import cx_Oracle")
+pymongo = LazyImport("import pymongo")
+pymysql = LazyImport("import pymysql")
 #
 # ## 并发
 # threading = LazyImport("import threading")
 # Thread = LazyImport("from threading import Thread")
 # Process = LazyImport("from multiprocessing import Process")
 # multiprocessing = LazyImport("import multiprocessing import Process")
-# queue = LazyImport("import queue")
 
 def all_import(print_statements=True):
     """所有导入语句"""

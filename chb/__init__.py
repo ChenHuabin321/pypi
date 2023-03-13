@@ -136,11 +136,16 @@ from chb._dao import OracleDao
 from chb._dao import MysqlDao
 from chb._dao import RedisDao
 from chb._log import Log
+from chb._log import log
 from chb._utils import set_device
 from chb._utils import get_current_path
 from chb._utils import get_time_str
 from chb._utils import MutilThreadReader
 from chb._utils import Tableprint
 from chb._utils import bar
-from chb._utils import time_cost
+from chb._utils import bar2
+from chb._utils import getsizeof
+from chb._utils import getdeepsizeof
 from chb._utils import Timer
+from chb._utils import GetFirstLetter
+from chb._utils import Cpen

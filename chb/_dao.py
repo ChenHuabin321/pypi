@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-import random
-import pymongo
-import pymysql
-import cx_Oracle
-import redis
+from chb._imports import *
 
 from chb._log import Log
 
@@ -22,7 +18,7 @@ class MysqlDao(object):
     :param CHARSET: 字符集，默认为utf-8
     """
     def __init__(self, HOST, USER_NAME, PASSWORD, DB_NAME,PORT=3306,
-                 dictCursor=False, CHARSET='utf8'):
+                 dictCursor=False, CHARSET='utf8', **kwargs):
         """
 
         :param HOST:
@@ -64,7 +60,7 @@ class MongoDao(object):
     DB_NAME：数据库名
     COL_NAME：集合名
     """
-    def __init__(self, HOST, PORT=27017, USER_NAME=None, PASSWORD=None, DB_NAME=None, COL_NAME=None):
+    def __init__(self, HOST, PORT=27017, USER_NAME=None, PASSWORD=None, DB_NAME=None, COL_NAME=None, **kwargs):
         """
         HOST：服务器IP
         PORT：端口
@@ -116,7 +112,7 @@ class OracleDao(object):
     :param db_conn: 数据库连接字符串
     :param encoding: 编码，默认为utf-8
     """
-    def __init__(self, db_name, db_pwd, db_conn, encoding="UTF-8"):
+    def __init__(self, db_name, db_pwd, db_conn, encoding="UTF-8", **kwargs):
         """
         :param db_name: 数据库名
         :param db_pwd: 密码
@@ -134,6 +130,20 @@ class OracleDao(object):
         self.cur.close()  # 关闭游标
         self.conn.close()  # 关闭数据库连接
 
+    def fetchmany(self, num_row):
+        """
+        对原生fetchmany进一步封装为生成器，可以通过for循环直接遍历
+        :param num_row: 每次循环取出的数据量
+        :return: list列表
+        """
+        self.cur.arraysize = num_row
+        self.cur.prefetchrows = num_row
+        while True:
+            rows = self.cur.fetchmany(num_row)
+            if not rows:
+                break
+            yield rows
+
 
 class RedisDao(object):
     """
@@ -144,7 +154,7 @@ class RedisDao(object):
     :param password: 密码
     :param db: 数据库序号，默认为0
     """
-    def __init__(self, redisDB=None, host=None, port=6379, password=None, db=0):
+    def __init__(self, redisDB=None, host=None, port=6379, password=None, db=0, **kwargs):
         """
         创建redis数据库连接
         :param redisDB: redis.StrictRedis对象，现有的redis连接。当传递该对象时，后续的host、post等参数无效。
@@ -182,6 +192,16 @@ class RedisDao(object):
         if item:
             item = item[1]  # 返回值为一个tuple
         return item
+
+    def set_key(self, key, value):
+        """
+        设置键值对
+        :param key: 键名
+        :param value: 值
+        :return: Boolean
+        """
+        return self.__db.set(key, value)
+
 
     def get_nowait(self, queue):
         # 直接返回队列第一个元素，如果队列为空返回的是None
