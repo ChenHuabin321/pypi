@@ -291,60 +291,6 @@ def getdeepsizeof(o, handlers={}, verbose=False):
     return f"{g}{m}{kb}"
 
 
-def bar(obj, return_index=False, bar_len_total=50, bar_str='█', end='', step=1):
-    """
-    obj: 可迭代对象或整型数据，整型将转换为range(obj)
-    return_index: 返回迭代元素的同时，是否返回索引
-    bar_len_total: 进度条长度，默认为50
-    bar_str: 进度条中的字符串，默认为'█'
-    end_str: 完成全部进度后，需要打印的字符串
-    step: 每个多少轮更新进度条
-    """
-    if isinstance(obj, int):
-        obj = range(obj)
-    assert isinstance(obj, Iterable), 'obj必须是整型或者可迭代对象'
-    assert len(obj) > 0, '可迭代对象长度为0'
-    obj_len = len(obj)
-    start_time = time.time()
-    now = obj[-1]
-    for now, item in enumerate(obj, start=1):
-        if return_index:
-            yield now - 1, item
-        else:
-            yield item
-        if now % step == 0:
-            bar_len_now = bar_len_total * now // obj_len  # 当前轮次需要打印的bar_str个数
-            end_time = time.time()
-            print(
-                f"\r{now / obj_len:<.0%}|{bar_str * bar_len_now:<{bar_len_total}}| {now}/{obj_len} [Time cost: {time_cost(start_time, end_time)}]",
-                end='')
-    print(
-        f"\r{now / obj_len:<.0%}|{bar_str * bar_len_now:<{bar_len_total}}| {now}/{obj_len} [Time cost: {time_cost(start_time, end_time)}]",
-        end='')
-    print(end=end)
-
-
-def bar2(now, total, need_print=True, bar_len_total=30, bar_str='█', info=None):
-    """
-    打印输出进度条
-    now: 当前进度
-    total: 需要迭代的总次数
-    bar_len_total: 进度条长度，默认为50
-    bar_str: 进度条中的字符串，默认为'█'
-    info: 需要在进度条末尾打印的字符串
-    """
-
-    bar_len_now = bar_len_total * now // total  # 当前轮次需要打印的bar_str个数
-    if info is None:
-        string = f"{now / total:>8.2%}|{bar_str * bar_len_now:　<{bar_len_total}}| {now}/{total}"
-    else:
-        string = f"{now / total:>8.2%}|{bar_str * bar_len_now:　<{bar_len_total}}| {now}/{total}  {info}"
-    if need_print:
-        print(f"\r{string}",end='')
-    else:
-        return string
-
-
 class Timer:
     """
         计时器，统计一段代码的运行时长
@@ -547,6 +493,61 @@ class Timer:
         :return:  整型时间戳
         """
         return datetime.datetime.strptime(string1, format_str1) - datetime.datetime.strptime(string2, format_str2)
+
+
+def bar(obj, return_index=False, bar_len_total=50, bar_str='█', end='', step=1):
+    """
+    obj: 可迭代对象或整型数据，整型将转换为range(obj)
+    return_index: 返回迭代元素的同时，是否返回索引
+    bar_len_total: 进度条长度，默认为50
+    bar_str: 进度条中的字符串，默认为'█'
+    end_str: 完成全部进度后，需要打印的字符串
+    step: 每个多少轮更新进度条
+    """
+    if isinstance(obj, int):
+        obj = range(obj)
+    assert isinstance(obj, Iterable), 'obj必须是整型或者可迭代对象'
+    assert len(obj) > 0, '可迭代对象长度为0'
+    obj_len = len(obj)
+    start_time = time.time()
+    now = obj[-1]
+    for now, item in enumerate(obj, start=1):
+        if return_index:
+            yield now - 1, item
+        else:
+            yield item
+        if now % step == 0:
+            bar_len_now = bar_len_total * now // obj_len  # 当前轮次需要打印的bar_str个数
+            end_time = time.time()
+            print(
+                f"\r{now / obj_len:<.0%}|{bar_str * bar_len_now:<{bar_len_total}}| {now}/{obj_len} [Time cost: {Timer.time_cost(start_time, end_time)}]",
+                end='')
+    print(
+        f"\r{now / obj_len:<.0%}|{bar_str * bar_len_now:<{bar_len_total}}| {now}/{obj_len} [Time cost: {Timer.time_cost(start_time, end_time)}]",
+        end='')
+    print(end=end)
+
+
+def bar2(now, total, need_print=True, bar_len_total=30, bar_str='█', info=None):
+    """
+    打印输出进度条
+    now: 当前进度
+    total: 需要迭代的总次数
+    bar_len_total: 进度条长度，默认为50
+    bar_str: 进度条中的字符串，默认为'█'
+    info: 需要在进度条末尾打印的字符串
+    """
+
+    bar_len_now = bar_len_total * now // total  # 当前轮次需要打印的bar_str个数
+    if info is None:
+        string = f"{now / total:>8.2%}|{bar_str * bar_len_now:　<{bar_len_total}}| {now}/{total}"
+    else:
+        string = f"{now / total:>8.2%}|{bar_str * bar_len_now:　<{bar_len_total}}| {now}/{total}  {info}"
+    if need_print:
+        print(f"\r{string}",end='')
+    else:
+        return string
+
 
 class GetFirstLetter(object):
     def is_contain_chinese(self, check_str):
