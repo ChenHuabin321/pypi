@@ -510,7 +510,7 @@ def bar(obj, return_index=False, bar_len_total=50, bar_str='█', end='', step=1
     assert len(obj) > 0, '可迭代对象长度为0'
     obj_len = len(obj)
     start_time = time.time()
-    now = obj[-1]
+    # now = obj[-1]
     for now, item in enumerate(obj, start=1):
         if return_index:
             yield now - 1, item
