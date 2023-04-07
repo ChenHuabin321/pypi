@@ -246,7 +246,7 @@ class RedisDao(object):
         """
         从名为set_name的hash队列中获取一个键值对
         """
-        value = self.db.hset(set_name, key)
+        value = self.db.hget(set_name, key)
         if isinstance(value, (dict, list)):
             value = json.loads(value)
         return value
