@@ -242,7 +242,7 @@ class RedisDao(object):
             value = json.dumps(value)
         self.db.hset(set_name, key, value)
 
-    def gset(self, set_name, key):
+    def hget(self, set_name, key):
         """
         从名为set_name的hash队列中获取一个键值对
         """
