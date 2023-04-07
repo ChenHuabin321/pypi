@@ -1,0 +1,22 @@
+Metadata-Version: 2.1
+Name: chb
+Version: 2.1.1
+Summary: chb常用代码库
+Home-page: https://github.com/ChenHuabin321/pypi
+Author: chenhuabin
+Author-email: chenhuabin321@163.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+
+# 1 说明
+本代码包为chb常用小代码，学习pypi打包用。
+# 2 模块说明
+- dao.py：常用数据库连接
+- log.py：日志器
+- utils：常用小工具
+# 使用说明
+from chb import *
