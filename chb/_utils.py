@@ -587,17 +587,30 @@ class GetFirstLetter(object):
             s2_list.append(''.join(charLst))
         return '_'.join(s2_list)
 
+
 class Cpen:
     """
-    无论文件是否存在都写入文件，功能待完善
+    打开或创建一个文件，并根据指定的模式进行读写。
+    如果文件不存在且使用非覆盖性写入模式，将自动创建一个新文件。
+
+    参数:
+    path: 文件路径
+    mode: 打开文件的模式
+    encoding: 文件编码，默认为 'utf-8'（仅适用于文本模式）
     """
+
     def __init__(self, path, mode, encoding='utf-8'):
         self.path = path
         self.mode = mode
-        if not os.path.exists(path):
-            with open(file=path, mode='w', encoding=encoding):
-                pass
-            self.f = open(file=path, mode=mode, encoding=encoding)
+        self.encoding = encoding
+
+        # 当文件不存在且使用非覆盖性写入模式时创建新文件
+        if not os.path.exists(path) and mode not in ('w', 'wb', 'w+', 'wb+', 'w+b'):
+            open(file=path, mode='w', encoding=encoding).close()
+
+        # 根据模式和编码打开文件
+        if 'b' in mode:  # 以二进制方式打开时，不能有mode参数
+            self.f = open(file=path, mode=mode)
         else:
             self.f = open(file=path, mode=mode, encoding=encoding)
 
@@ -607,7 +620,22 @@ class Cpen:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.f.close()
 
+    def writeline(self, line):
+        """
+        在字符串末尾添加 \n 然后写入，如果是字节，则直接写入
+        :param line: 需要写入的字符串
+        """
+        if 'b' not in self.mode and isinstance(line, str):
+            self.f.write(line + '\n')
+        elif 'b' in self.mode and isinstance(line, bytes):
+            self.f.write(line)
+        else:
+            raise ValueError('输入内容类型与模式不匹配')
+
     def readline(self):
+        """
+        逐行读取文件内容，返回一个生成器。
+        """
         while True:
             line = self.f.readline()
             if not line:
@@ -615,6 +643,12 @@ class Cpen:
             yield line
 
     def readlines(self, num_lines=100000):
+        """
+        按指定数量的行数读取文件内容，返回一个生成器。
+
+        参数:
+        num_lines: 每次读取的行数，默认为100000行
+        """
         while True:
             lines = self.f.readlines(num_lines)
             if not lines:

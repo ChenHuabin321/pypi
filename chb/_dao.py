@@ -238,15 +238,28 @@ class RedisDao(object):
         """
         向名为set_name的hash队列中添加一个键值对
         """
-        if isinstance(value, (dict, list)):
-            value = json.dumps(value)
         self.db.hset(set_name, key, value)
 
     def hget(self, set_name, key):
         """
         从名为set_name的hash队列中获取一个键值对
         """
-        value = self.db.hget(set_name, key)
-        if isinstance(value, (dict, list)):
-            value = json.loads(value)
-        return value
+        return self.db.hget(set_name, key)
+
+    def sadd(self, set_name, value):
+        """
+        向名为set_name的set中添加一个元素value
+        """
+        self.db.sadd(set_name, value)
+
+    def srem(self, set_name, value):
+        """
+        向名为set_name的set中删除一个元素value
+        """
+        self.db.srem(set_name, value)
+
+    def inset(self, set_name, value):
+        """
+        判断元素value是否在名为set_name的set中
+        """
+        self.db.sismember(set_name, value)
