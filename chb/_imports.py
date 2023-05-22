@@ -4,10 +4,12 @@ from ._importable import LazyImport, _get_import_statements
 ### Data Wrangling
 pd = LazyImport("import pandas as pd")
 np = LazyImport("import numpy as np")
+transforms = LazyImport("from torchvision import transforms")
+
 #
 # ### Data Visualization and Plotting
-# mpl = LazyImport("import matplotlib as mpl")
-# plt = LazyImport("import matplotlib.pyplot as plt")
+mpl = LazyImport("import matplotlib as mpl")
+plt = LazyImport("import matplotlib.pyplot as plt")
 # sns = LazyImport("import seaborn as sns")
 # Image = LazyImport("from PIL import Image")
 #

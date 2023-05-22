@@ -656,5 +656,22 @@ class Cpen:
             yield lines
 
 
+def show_image(img_lst, **imshow_kwargs):
+    """
+    pytorch建模过程中，展示图片用。图片可以是Pillow.Image，也可以是torch.Tensor。
+    img_lst: 保存图像和标题的list，形如：[(image1, title1),(image2, title2)]。image可以使Pillow.Image对象，也可以是torch.Tensor。
+    imshow_kwargs: 需要传递给plt.imshow的参数
+    """
+    mpl.rcParams['font.sans-serif'] = ['SimHei']  # 中文字体支持
+    fig, axs =plt.subplots(1,len(img_lst), constrained_layout=True,  figsize=(2*len(img_lst),2), squeeze=False)
+    for i, (img, title) in enumerate(img_lst):
+        if isinstance(img, torch.Tensor):  # 如果是torch.Tensor类型，就必须转换成Pillow.Image类型，才能进行展示
+            img = transforms.ToPILImage()(img)
+        axs[0, i].imshow(np.asarray(img), **imshow_kwargs)
+        # axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
+        axs[0, i].set_title(title)
+    plt.show()
+
+
 if __name__=='__main__':
     print(Timer.datebetween('2022-01-01 00:00:00', '2022-01-04 00:00:00'))
